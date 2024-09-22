@@ -25,22 +25,21 @@ public class PointService {
      * @return 포인트가 충전된 UserPoint 객체 반환
      */
     public UserPoint chargeUserPoint(long id, long amount) {
-        UserPoint entity = userPointTable.selectById(id);
-        UserPoint userPoint = userPointTable.insertOrUpdate(entity.id(), entity.point() + amount);
-        pointHistoryTable.insert(userPoint.id(), userPoint.point(), TransactionType.CHARGE, System.currentTimeMillis());
-
-        return userPoint;
+        return chargeOrUseUserPoint(id, amount, TransactionType.CHARGE);
     }
 
     public UserPoint useUserPoint(long id, long amount) {
-        UserPoint entity = userPointTable.selectById(id);
-        UserPoint userPoint = userPointTable.insertOrUpdate(entity.id(), entity.point() - amount);
-        pointHistoryTable.insert(userPoint.id(), userPoint.point(), TransactionType.USE, System.currentTimeMillis());
-
-        return userPoint;
+        return chargeOrUseUserPoint(id, -amount, TransactionType.USE);
     }
 
     public List<PointHistory> getUserPointHistory(long id) {
         return pointHistoryTable.selectAllByUserId(id);
+    }
+
+    private UserPoint chargeOrUseUserPoint(long id, long amount, TransactionType type) {
+        UserPoint entity = userPointTable.selectById(id);
+        UserPoint userPoint = userPointTable.insertOrUpdate(id, entity.point() + amount);
+        pointHistoryTable.insert(id, userPoint.point(), type, System.currentTimeMillis());
+        return userPoint;
     }
 }
