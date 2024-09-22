@@ -31,4 +31,12 @@ public class PointService {
 
         return userPoint;
     }
+
+    public UserPoint userUserPoint(long id, long amount) {
+        UserPoint entity = userPointTable.selectById(id);
+        UserPoint userPoint = userPointTable.insertOrUpdate(entity.id(), entity.point() - amount);
+        pointHistoryTable.insert(userPoint.id(), userPoint.point(), TransactionType.USE, System.currentTimeMillis());
+
+        return userPoint;
+    }
 }

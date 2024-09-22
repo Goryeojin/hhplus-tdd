@@ -28,8 +28,8 @@ class PointServiceTest {
     }
 
     @Test
-    @DisplayName("특정 유저가 포인트를 충전하면 충전된 포인트 객체를 반환한다")
-    void chargeReturnsPoints() {
+    @DisplayName("특정 유저가 포인트를 충전하면 금액만큼 충전하여 객체를 반환한다")
+    void chargePoint() {
         //given
         long userId = 1L;
         long chargeAmount = 1_000L;
@@ -54,5 +54,22 @@ class PointServiceTest {
 
         //then
         assertThat(result.id()).isEqualTo(userId);
+    }
+
+    @Test
+    @DisplayName("유저가 포인트를 사용하면 금액만큼 차감하여 객체를 반환한다.")
+    void usePoint() {
+        //given
+        long userId = 1L;
+        long chargeAmount = 10_000L;
+        long useAmount = 1_000L;
+        long expectedAmount = 9_000L;
+        UserPoint userPoint = pointService.chargeUserPoint(userId, chargeAmount);
+
+        //when
+        UserPoint result = pointService.userUserPoint(userPoint.id(), useAmount);
+
+        //then
+        assertThat(result.point()).isEqualTo(expectedAmount);
     }
 }
