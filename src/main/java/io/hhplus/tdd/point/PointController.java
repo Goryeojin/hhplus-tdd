@@ -44,7 +44,8 @@ public class PointController {
             @PathVariable long id,
             @RequestBody long amount
     ) {
-        return new UserPoint(0, 0, 0);
+        log.debug("charge point: {}, {}", id, amount);
+        return pointService.chargeUserPoint(id, amount);
     }
 
     /**
