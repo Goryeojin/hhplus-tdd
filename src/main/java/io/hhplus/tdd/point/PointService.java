@@ -3,9 +3,9 @@ package io.hhplus.tdd.point;
 import io.hhplus.tdd.database.PointHistoryTable;
 import io.hhplus.tdd.database.UserPointTable;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -32,11 +32,15 @@ public class PointService {
         return userPoint;
     }
 
-    public UserPoint userUserPoint(long id, long amount) {
+    public UserPoint useUserPoint(long id, long amount) {
         UserPoint entity = userPointTable.selectById(id);
         UserPoint userPoint = userPointTable.insertOrUpdate(entity.id(), entity.point() - amount);
         pointHistoryTable.insert(userPoint.id(), userPoint.point(), TransactionType.USE, System.currentTimeMillis());
 
         return userPoint;
+    }
+
+    public List<PointHistory> getUserPointHistory(long id) {
+        return pointHistoryTable.selectAllByUserId(id);
     }
 }

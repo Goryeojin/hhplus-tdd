@@ -6,8 +6,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 
 class PointServiceTest {
 
@@ -67,9 +69,29 @@ class PointServiceTest {
         UserPoint userPoint = pointService.chargeUserPoint(userId, chargeAmount);
 
         //when
-        UserPoint result = pointService.userUserPoint(userPoint.id(), useAmount);
+        UserPoint result = pointService.useUserPoint(userPoint.id(), useAmount);
 
         //then
         assertThat(result.point()).isEqualTo(expectedAmount);
+    }
+
+    @Test
+    @DisplayName("특정 유저의 포인트 충전/사용 내역을 조회한다.")
+    void getUserPointHistory() {
+        //given
+        long userId = 1L;
+        List<PointHistory> expectedList = new ArrayList<>();
+        expectedList.add(new PointHistory(1L, userId, 1_000L, TransactionType.CHARGE, 0));
+        expectedList.add(new PointHistory(2L, userId, 500L, TransactionType.USE, 0));
+
+        //when
+        pointService.chargeUserPoint(userId, 1_000L);
+        pointService.useUserPoint(userId, 500L);
+        List<PointHistory> result = pointService.getUserPointHistory(userId);
+
+        //then
+        assertThat(result)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("updateMillis")
+                .isEqualTo(expectedList);
     }
 }
