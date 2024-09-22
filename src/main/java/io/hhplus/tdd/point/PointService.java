@@ -1,5 +1,6 @@
 package io.hhplus.tdd.point;
 
+import io.hhplus.tdd.database.PointHistoryTable;
 import io.hhplus.tdd.database.UserPointTable;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 public class PointService {
 
     private final UserPointTable userPointTable;
+    private final PointHistoryTable pointHistoryTable;
   
     public UserPoint getUserPoint(long id) {
         return userPointTable.selectById(id);
@@ -23,6 +25,10 @@ public class PointService {
      * @return 포인트가 충전된 UserPoint 객체 반환
      */
     public UserPoint chargeUserPoint(long id, long amount) {
-        return userPointTable.insertOrUpdate(id, amount);
+        UserPoint entity = userPointTable.selectById(id);
+        UserPoint userPoint = userPointTable.insertOrUpdate(entity.id(), entity.point() + amount);
+        pointHistoryTable.insert(userPoint.id(), userPoint.point(), TransactionType.CHARGE, System.currentTimeMillis());
+
+        return userPoint;
     }
 }

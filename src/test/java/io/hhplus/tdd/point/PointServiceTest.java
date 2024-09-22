@@ -1,5 +1,6 @@
 package io.hhplus.tdd.point;
 
+import io.hhplus.tdd.database.PointHistoryTable;
 import io.hhplus.tdd.database.UserPointTable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -12,6 +13,7 @@ class PointServiceTest {
 
     PointService pointService;
     UserPointTable userPointTable;
+    PointHistoryTable pointHistoryTable;
 
     @BeforeEach
     void beforeEach() {
@@ -21,21 +23,24 @@ class PointServiceTest {
          * 매 테스트 시행 시 Service 와 Repository 객체를 새로 생성한다.
          */
         userPointTable = new UserPointTable();
-        pointService = new PointService(userPointTable);
+        pointHistoryTable = new PointHistoryTable();
+        pointService = new PointService(userPointTable, pointHistoryTable);
     }
 
     @Test
-    @DisplayName("유저가 처음으로 포인트를 충전하면 충전된 포인트 객체를 반환한다")
-    void chargeFirstTime_ReturnsPoints() {
+    @DisplayName("특정 유저가 포인트를 충전하면 충전된 포인트 객체를 반환한다")
+    void chargeReturnsPoints() {
         //given
         long userId = 1L;
         long chargeAmount = 1_000L;
+        long expectedAmount = 2_000L;
 
         //when
+        pointService.chargeUserPoint(userId, chargeAmount);
         UserPoint result = pointService.chargeUserPoint(userId, chargeAmount);
 
         //then
-        assertThat(result.point()).isEqualTo(chargeAmount);
+        assertThat(result.point()).isEqualTo(expectedAmount);
     }
   
     @Test
