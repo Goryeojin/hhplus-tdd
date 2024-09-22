@@ -22,7 +22,7 @@ public class PointController {
     public UserPoint point(
             @PathVariable long id
     ) {
-        return new UserPoint(0, 0, 0);
+        return pointService.getUserPoint(id);
     }
 
     /**
@@ -32,6 +32,7 @@ public class PointController {
     public List<PointHistory> history(
             @PathVariable long id
     ) {
+
         return List.of();
     }
 

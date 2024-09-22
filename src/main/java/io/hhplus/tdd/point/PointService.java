@@ -11,6 +11,10 @@ import org.springframework.stereotype.Service;
 public class PointService {
 
     private final UserPointTable userPointTable;
+  
+    public UserPoint getUserPoint(long id) {
+        return userPointTable.selectById(id);
+    }
 
     /**
      * 특정 유저의 포인트를 충전한다.
