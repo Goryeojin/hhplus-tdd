@@ -1,7 +1,8 @@
 package io.hhplus.tdd.point;
 
-import io.hhplus.tdd.database.PointHistoryTable;
-import io.hhplus.tdd.database.UserPointTable;
+import io.hhplus.tdd.database.UserPointRepository;
+import io.hhplus.tdd.point.repository.PointHistoryRepository;
+import io.hhplus.tdd.point.service.PointService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,9 +28,9 @@ class PointServiceTest {
      * @Mock : Mock 객체로 해당 클래스의 의존성을 주입하여, 비즈니스 로직만 테스트한다.
      */
     @Mock
-    UserPointTable userPointTable;
+    UserPointRepository userPointRepository;
     @Mock
-    PointHistoryTable pointHistoryTable;
+    PointHistoryRepository pointHistoryRepository;
 
     static final Long USER_ID = 1L; // 테스트에 쓰일 유저 ID
 
@@ -43,9 +44,9 @@ class PointServiceTest {
         UserPoint userPoint = new UserPoint(userId, chargeAmount, System.currentTimeMillis()); // 초기 유저 포인트 객체
 
         // 유저의 현재 포인트 조회 시 mock 객체 반환 설정
-        given(userPointTable.selectById(userId)).willReturn(userPoint);
+        given(userPointRepository.selectById(userId)).willReturn(userPoint);
         // 포인트 충전 후 예상되는 유저 포인트 객체 반환 설정
-        given(userPointTable.insertOrUpdate(userId, expectedAmount))
+        given(userPointRepository.insertOrUpdate(userId, expectedAmount))
                 .willReturn(new UserPoint(userId, expectedAmount, System.currentTimeMillis()));
 
         //when
@@ -54,7 +55,7 @@ class PointServiceTest {
         //then
         assertThat(result.point()).isEqualTo(expectedAmount); // 결과 포인트가 예상 금액과 일치하는지 검증
         // 부수적인 동작인 포인트 충전 기록을 남기는지 검증
-        verify(pointHistoryTable).insert(eq(userId), eq(expectedAmount), eq(TransactionType.CHARGE), anyLong());
+        verify(pointHistoryRepository).insert(eq(userId), eq(expectedAmount), eq(TransactionType.CHARGE), anyLong());
     }
   
     @Test
@@ -65,14 +66,14 @@ class PointServiceTest {
         UserPoint expected = new UserPoint(userId, 0L, System.currentTimeMillis()); // 예상되는 유저 포인트 객체
 
         // 유저의 현재 포인트 조회 시 mock 객체 반환 설정
-        given(userPointTable.selectById(userId)).willReturn(expected);
+        given(userPointRepository.selectById(userId)).willReturn(expected);
 
         //when
-        UserPoint result = pointService.getUserPoint(userId); // 검증할 메서드 실행
+        UserPoint result = pointService.findPoint(userId); // 검증할 메서드 실행
 
         //then
         assertThat(result.id()).isEqualTo(userId); // 결과 유저 ID가 예상과 일치하는지 검증
-        verify(userPointTable).selectById(eq(userId)); // 해당 메서드가 호출되었는지 검증
+        verify(userPointRepository).selectById(eq(userId)); // 해당 메서드가 호출되었는지 검증
     }
 
     @Test
@@ -86,9 +87,9 @@ class PointServiceTest {
         UserPoint userPoint = new UserPoint(userId, chargeAmount, System.currentTimeMillis()); // 초기 유저 포인트 객체
 
         // 유저의 현재 포인트 조회 시 mock 객체 반환 설정
-        given(userPointTable.selectById(userId)).willReturn(userPoint);
+        given(userPointRepository.selectById(userId)).willReturn(userPoint);
         // 포인트 충전 후 예상되는 유저 포인트 객체 반환 설정
-        given(userPointTable.insertOrUpdate(userId, expectedAmount))
+        given(userPointRepository.insertOrUpdate(userId, expectedAmount))
                 .willReturn(new UserPoint(userId, expectedAmount, System.currentTimeMillis()));
 
         //when
@@ -97,7 +98,7 @@ class PointServiceTest {
         //then
         assertThat(result.point()).isEqualTo(expectedAmount); // 결과 포인트가 예상 금액과 일치하는지 검증
         // 포인트 충전 기록을 남기는지 검증
-        verify(pointHistoryTable).insert(eq(userId), eq(expectedAmount), eq(TransactionType.USE), anyLong());
+        verify(pointHistoryRepository).insert(eq(userId), eq(expectedAmount), eq(TransactionType.USE), anyLong());
     }
 
     @Test
@@ -111,7 +112,7 @@ class PointServiceTest {
                 new PointHistory(2L, userId, 500L, TransactionType.USE, System.currentTimeMillis())
         );
         // 유저의 포인트 내역 조회 시 mock 객체 반환 설정
-        given(pointHistoryTable.selectAllByUserId(userId)).willReturn(expectedList);
+        given(pointHistoryRepository.selectAllByUserId(userId)).willReturn(expectedList);
 
         //when
         List<PointHistory> result = pointService.getUserPointHistory(userId); // 검증할 메서드 실행
@@ -121,6 +122,6 @@ class PointServiceTest {
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("updateMillis")
                 .isEqualTo(expectedList); // updateMillis 제외하고 비교
         // 포인트 내역 조회 메서드가 호출되었는지 검증
-        verify(pointHistoryTable).selectAllByUserId(eq(userId));
+        verify(pointHistoryRepository).selectAllByUserId(eq(userId));
     }
 }

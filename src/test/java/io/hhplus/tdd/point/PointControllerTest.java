@@ -1,5 +1,6 @@
 package io.hhplus.tdd.point;
 
+import io.hhplus.tdd.point.service.PointService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -22,7 +23,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(controllers = PointController.class)
+/**
+ * @WebMvcTest 애노테이션을 사용해 Spring MVC 를 테스트할 수 있다.
+ *
+ */
+@WebMvcTest(PointController.class)
 class PointControllerTest {
 
     static final long USER_ID = 1L;
@@ -49,7 +54,7 @@ class PointControllerTest {
     void getUserPoint() throws Exception {
         //given
         UserPoint userPoint = new UserPoint(USER_ID, 0L, 0L);
-        given(pointService.getUserPoint(USER_ID)).willReturn(userPoint);
+        given(pointService.findPoint(USER_ID)).willReturn(userPoint);
 
         //when
         //then
@@ -58,7 +63,7 @@ class PointControllerTest {
                 .andExpect(jsonPath("$.id").value(USER_ID))
                 .andExpect(jsonPath("$.point").value(0L))
                 .andExpect(jsonPath("$.updateMillis").value(0L));
-        verify(pointService).getUserPoint(USER_ID);
+        verify(pointService).findPoint(USER_ID);
     }
 
     @Test
