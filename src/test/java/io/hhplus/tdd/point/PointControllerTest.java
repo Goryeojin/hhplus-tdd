@@ -74,7 +74,7 @@ class PointControllerTest {
                 new PointHistory(1L, USER_ID, CHARGE_AMOUNT, TransactionType.CHARGE, 0L),
                 new PointHistory(1L, USER_ID, USE_AMOUNT, TransactionType.USE, 0L)
         );
-        given(pointService.getUserPointHistory(USER_ID)).willReturn(histories);
+        given(pointService.findHistory(USER_ID)).willReturn(histories);
 
         //when
         //then
@@ -83,7 +83,7 @@ class PointControllerTest {
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.[0].amount").value(CHARGE_AMOUNT))
                 .andExpect(jsonPath("$.[1].amount").value(USE_AMOUNT));
-        verify(pointService).getUserPointHistory(USER_ID);
+        verify(pointService).findHistory(USER_ID);
     }
 
     @Test
@@ -91,7 +91,7 @@ class PointControllerTest {
     void chargeUserPoint() throws Exception {
         //given
         UserPoint userPoint = new UserPoint(USER_ID, CHARGE_AMOUNT, 0);
-        given(pointService.chargeUserPoint(USER_ID, CHARGE_AMOUNT)).willReturn(userPoint);
+        given(pointService.charge(USER_ID, CHARGE_AMOUNT)).willReturn(userPoint);
 
         //when
         //then
@@ -106,7 +106,7 @@ class PointControllerTest {
     void useUserPoint() throws Exception {
         //given
         UserPoint userPoint = new UserPoint(USER_ID, CHARGE_AMOUNT - USE_AMOUNT, 0);
-        given(pointService.useUserPoint(USER_ID, USE_AMOUNT)).willReturn(userPoint);
+        given(pointService.use(USER_ID, USE_AMOUNT)).willReturn(userPoint);
 
         //when
         //then

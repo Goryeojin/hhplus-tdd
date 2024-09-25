@@ -1,8 +1,6 @@
 package io.hhplus.tdd.point.service;
 
-import io.hhplus.tdd.database.PointHistoryTable;
-import io.hhplus.tdd.database.UserPointRepository;
-import io.hhplus.tdd.database.UserPointTable;
+import io.hhplus.tdd.point.repository.UserPointRepository;
 import io.hhplus.tdd.point.PointHistory;
 import io.hhplus.tdd.point.TransactionType;
 import io.hhplus.tdd.point.UserPoint;
@@ -20,25 +18,27 @@ public class PointService {
     private final PointHistoryRepository pointHistoryRepository;
   
     public UserPoint findPoint(long id) {
-        return userPointRepository.selectById(id);
+        return UserPoint.findById(id, userPointRepository);
     }
 
-    public UserPoint chargeUserPoint(long id, long amount) {
-        return chargeOrUseUserPoint(id, amount, TransactionType.CHARGE);
+    public UserPoint charge(long id, long amount) {
+        UserPoint userPoint = UserPoint.findById(id, userPointRepository);
+        UserPoint updateUserPoint = userPoint.charge(amount);
+        PointHistory pointHistory = PointHistory.create(id, amount, TransactionType.CHARGE);
+        pointHistory.save(pointHistoryRepository);
+        return updateUserPoint;
     }
 
-    public UserPoint useUserPoint(long id, long amount) {
-        return chargeOrUseUserPoint(id, -amount, TransactionType.USE);
-    }
-
-    public List<PointHistory> getUserPointHistory(long id) {
-        return pointHistoryRepository.selectAllByUserId(id);
-    }
-
-    private UserPoint chargeOrUseUserPoint(long id, long amount, TransactionType type) {
-        UserPoint entity = userPointRepository.selectById(id);
-        UserPoint userPoint = userPointRepository.insertOrUpdate(id, entity.point() + amount);
-        pointHistoryRepository.insert(id, userPoint.point(), type, System.currentTimeMillis());
+    public UserPoint use(long id, long amount) {
+        UserPoint userPoint = UserPoint.findById(id, userPointRepository);
+        UserPoint updateUserPoint = userPoint.use(amount);
+        PointHistory pointHistory = PointHistory.create(id, amount, TransactionType.CHARGE);
+        pointHistory.save(pointHistoryRepository);
         return userPoint;
     }
+
+    public List<PointHistory> findHistory(long id) {
+        return pointHistoryRepository.findAllById(id);
+    }
+
 }

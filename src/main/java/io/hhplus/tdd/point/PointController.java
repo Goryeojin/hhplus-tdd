@@ -27,7 +27,7 @@ public class PointController {
     public List<PointHistory> history(
             @PathVariable long id
     ) {
-        return pointService.getUserPointHistory(id);
+        return pointService.findHistory(id);
     }
 
     @PatchMapping("{id}/charge")
@@ -36,7 +36,7 @@ public class PointController {
             @RequestBody long amount
     ) {
         log.debug("charge point: {}, {}", id, amount);
-        return pointService.chargeUserPoint(id, amount);
+        return pointService.charge(id, amount);
     }
 
     @PatchMapping("{id}/use")
@@ -44,6 +44,6 @@ public class PointController {
             @PathVariable long id,
             @RequestBody long amount
     ) {
-        return pointService.useUserPoint(id, amount);
+        return pointService.use(id, amount);
     }
 }

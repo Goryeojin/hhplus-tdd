@@ -15,12 +15,12 @@ public class PointHistoryRepositoryImpl implements PointHistoryRepository {
     private final PointHistoryTable pointHistoryTable;
 
     @Override
-    public PointHistory insert(long userId, long amount, TransactionType type, long updateMillis) {
+    public PointHistory save(long userId, long amount, TransactionType type, long updateMillis) {
         return pointHistoryTable.insert(userId, amount, type, updateMillis);
     }
 
     @Override
-    public List<PointHistory> selectAllByUserId(long userId) {
+    public List<PointHistory> findAllById(long userId) {
         return pointHistoryTable.selectAllByUserId(userId);
     }
 }
