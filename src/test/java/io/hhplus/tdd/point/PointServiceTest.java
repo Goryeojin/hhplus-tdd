@@ -1,7 +1,7 @@
 package io.hhplus.tdd.point;
 
-import io.hhplus.tdd.point.repository.UserPointRepository;
 import io.hhplus.tdd.point.repository.PointHistoryRepository;
+import io.hhplus.tdd.point.repository.UserPointRepository;
 import io.hhplus.tdd.point.service.PointService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -13,6 +13,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
@@ -35,94 +36,142 @@ class PointServiceTest {
     static final Long USER_ID = 1L; // 테스트에 쓰일 유저 ID
 
     @Test
-    @DisplayName("특정 유저가 포인트를 충전하면 금액만큼 충전하여 객체를 반환한다")
-    void chargePoint() {
+    @DisplayName("충전하려는 포인트가 0원 이하일 경우 충전에 실패한다.")
+    void failToChargeIfAmountIsNotGreaterThanZero() {
         //given
-        long userId = USER_ID;
+        long chargeAmount = 0L;
+        UserPoint userPoint = new UserPoint(USER_ID, chargeAmount, System.currentTimeMillis()); // 초기 유저 포인트 객체
+
+        given(userPointRepository.findById(USER_ID)).willReturn(userPoint);
+
+        //when - then
+        assertThatThrownBy(() -> {
+            pointService.charge(USER_ID, chargeAmount);
+        })
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("0보다 커야 합니다.");
+    }
+
+    @Test
+    @DisplayName("0원이 넘는 포인트를 충전하면 충전된다.")
+    void chargePointWhenAmountIsGreaterThanZero() {
+        //given
         long chargeAmount = 1_000L; // 충전할 금액
         long expectedAmount = 2_000L; // 예상되는 최종 포인트
-        UserPoint userPoint = new UserPoint(userId, chargeAmount, System.currentTimeMillis()); // 초기 유저 포인트 객체
+        UserPoint userPoint = new UserPoint(USER_ID, chargeAmount, System.currentTimeMillis()); // 초기 유저 포인트 객체
 
         // 유저의 현재 포인트 조회 시 mock 객체 반환 설정
-        given(userPointRepository.findById(userId)).willReturn(userPoint);
+        given(userPointRepository.findById(USER_ID)).willReturn(userPoint);
         // 포인트 충전 후 예상되는 유저 포인트 객체 반환 설정
-        given(userPointRepository.saveOrUpdate(userId, expectedAmount))
-                .willReturn(new UserPoint(userId, expectedAmount, System.currentTimeMillis()));
+        given(userPointRepository.saveOrUpdate(USER_ID, expectedAmount))
+                .willReturn(new UserPoint(USER_ID, expectedAmount, System.currentTimeMillis()));
 
         //when
-        UserPoint result = pointService.charge(userId, chargeAmount); // 검증할 메서드 실행
+        UserPoint result = pointService.charge(USER_ID, chargeAmount); // 검증할 메서드 실행
 
         //then
         assertThat(result).isNotNull();
         assertThat(result.point()).isEqualTo(expectedAmount); // 결과 포인트가 예상 금액과 일치하는지 검증
         // 부수적인 동작인 포인트 충전 기록을 남기는지 검증
-        verify(pointHistoryRepository).save(eq(userId), eq(expectedAmount), eq(TransactionType.CHARGE), anyLong());
+        verify(pointHistoryRepository).save(eq(USER_ID), eq(chargeAmount), eq(TransactionType.CHARGE), anyLong());
     }
+
+    // 최대 잔고를 넘으면 실패
   
     @Test
-    @DisplayName("특정 유저의 포인트를 조회한다.")
-    void getUserPoint() {
+    @DisplayName("특정 유저의 포인트 정보를 리턴한다.")
+    void returnUsePointInfoWhenUserExists() {
         //given
-        long userId = USER_ID;
-        UserPoint expected = new UserPoint(userId, 0L, System.currentTimeMillis()); // 예상되는 유저 포인트 객체
-
-        // 유저의 현재 포인트 조회 시 mock 객체 반환 설정
-        given(userPointRepository.findById(userId)).willReturn(expected);
+        UserPoint expected = new UserPoint(USER_ID, 0L, 0L); // 예상되는 유저 포인트 객체
+        given(userPointRepository.findById(USER_ID)).willReturn(expected); // 유저의 현재 포인트 조회 시 mock 객체 반환 설정
 
         //when
-        UserPoint result = pointService.findPoint(userId); // 검증할 메서드 실행
+        UserPoint result = pointService.findPoint(USER_ID); // 검증할 메서드 실행
 
         //then
-        assertThat(result.id()).isEqualTo(userId); // 결과 유저 ID가 예상과 일치하는지 검증
-        verify(userPointRepository).findById(eq(userId)); // 해당 메서드가 호출되었는지 검증
+        assertThat(result.id()).isEqualTo(USER_ID); // 결과 유저 ID가 예상과 일치하는지 검증
+        verify(userPointRepository).findById(eq(USER_ID)); // 해당 메서드가 호출되었는지 검증
     }
 
     @Test
-    @DisplayName("유저가 포인트를 사용하면 금액만큼 차감하여 객체를 반환한다.")
-    void usePoint() {
+    @DisplayName("사용하려는 포인트가 0원 이하일 경우 사용에 실패한다.")
+    void failToUseIfUseAmountIsNotGreaterThanZero() {
         //given
-        long userId = USER_ID;
+        long useAmount = 0L;
+        UserPoint userPoint = new UserPoint(USER_ID, useAmount, System.currentTimeMillis()); // 초기 유저 포인트 객체
+
+        given(userPointRepository.findById(USER_ID)).willReturn(userPoint);
+
+        //when - then
+        assertThatThrownBy(() -> {
+            pointService.use(USER_ID, useAmount);
+        })
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("0보다 커야 합니다.");
+    }
+
+    @Test
+    @DisplayName("사용하려는 포인트가 잔액보다 클 경우 사용에 실패한다.")
+    void failToUseIfUseAmountIsGreaterThanGivenPoint() {
+        //given
+        long useAmount = 10_000L;
+        UserPoint userPoint = new UserPoint(USER_ID, 1_000L, System.currentTimeMillis()); // 초기 유저 포인트 객체
+
+        given(userPointRepository.findById(USER_ID)).willReturn(userPoint);
+
+        //when - then
+        assertThatThrownBy(() -> {
+            pointService.use(USER_ID, useAmount);
+        })
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("잔액이 부족합니다.");
+    }
+
+    @Test
+    @DisplayName("유저의 남은 포인트 내에서 포인트를 사용한다.")
+    void usePointWhenGivenUserIdAndAmount() {
+        //given
         long chargeAmount = 10_000L; // 초기 충전 금액
         long useAmount = 1_000L; // 사용할 금액
         long expectedAmount = 9_000L; // 예상되는 최종 포인트
-        UserPoint userPoint = new UserPoint(userId, chargeAmount, System.currentTimeMillis()); // 초기 유저 포인트 객체
+        UserPoint userPoint = new UserPoint(USER_ID, chargeAmount, System.currentTimeMillis()); // 초기 유저 포인트 객체
 
         // 유저의 현재 포인트 조회 시 mock 객체 반환 설정
-        given(userPointRepository.findById(userId)).willReturn(userPoint);
+        given(userPointRepository.findById(USER_ID)).willReturn(userPoint);
         // 포인트 충전 후 예상되는 유저 포인트 객체 반환 설정
-        given(userPointRepository.saveOrUpdate(userId, expectedAmount))
-                .willReturn(new UserPoint(userId, expectedAmount, System.currentTimeMillis()));
+        given(userPointRepository.saveOrUpdate(USER_ID, expectedAmount))
+                .willReturn(new UserPoint(USER_ID, expectedAmount, System.currentTimeMillis()));
 
         //when
         UserPoint result = pointService.use(userPoint.id(), useAmount); // 검증할 메서드 실행
 
         //then
         assertThat(result.point()).isEqualTo(expectedAmount); // 결과 포인트가 예상 금액과 일치하는지 검증
-        // 포인트 충전 기록을 남기는지 검증
-        verify(pointHistoryRepository).save(eq(userId), eq(expectedAmount), eq(TransactionType.USE), anyLong());
+        // 포인트 사용 기록을 남기는지 검증
+        verify(pointHistoryRepository).save(eq(USER_ID), eq(useAmount), eq(TransactionType.USE), anyLong());
     }
 
     @Test
     @DisplayName("특정 유저의 포인트 충전/사용 내역을 조회한다.")
-    void getUserPointHistory() {
+    void returnUserPointHistoryWhenUseExists() {
         //given
-        long userId = USER_ID;
         // 예상 포인트 내역 설정
         List<PointHistory> expectedList = List.of(
-                new PointHistory(USER_ID, userId, 1_000L, TransactionType.CHARGE, System.currentTimeMillis()),
-                new PointHistory(2L, userId, 500L, TransactionType.USE, System.currentTimeMillis())
+                new PointHistory(1L, USER_ID, 1_000L, TransactionType.CHARGE, System.currentTimeMillis()),
+                new PointHistory(2L, USER_ID, 500L, TransactionType.USE, System.currentTimeMillis())
         );
         // 유저의 포인트 내역 조회 시 mock 객체 반환 설정
-        given(pointHistoryRepository.findAllById(userId)).willReturn(expectedList);
+        given(userPointRepository.findById(USER_ID)).willReturn(new UserPoint(USER_ID, 500L, 0L));
+        given(pointHistoryRepository.findAllById(USER_ID)).willReturn(expectedList);
 
         //when
-        List<PointHistory> result = pointService.findHistory(userId); // 검증할 메서드 실행
+        List<PointHistory> result = pointService.findHistory(USER_ID); // 검증할 메서드 실행
 
         //then
         assertThat(result)
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("updateMillis")
                 .isEqualTo(expectedList); // updateMillis 제외하고 비교
         // 포인트 내역 조회 메서드가 호출되었는지 검증
-        verify(pointHistoryRepository).findAllById(eq(userId));
+        verify(pointHistoryRepository).findAllById(eq(USER_ID));
     }
 }
