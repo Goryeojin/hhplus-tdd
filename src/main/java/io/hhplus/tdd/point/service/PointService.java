@@ -25,16 +25,16 @@ public class PointService {
     private final Map<String, Lock> userLocks = new ConcurrentHashMap<>();
   
     public UserPoint findPoint(long id) {
-        return UserPoint.findById(id, userPointRepository);
+        return userPointRepository.findById(id);
     }
 
     public UserPoint charge(long id, long amount) {
-        Lock lock = userLocks.computeIfAbsent("" + id, k -> new ReentrantLock(true));
-        log.info("charge lock: {}", id);
+        Lock lock = userLocks.computeIfAbsent(String.valueOf(id), k -> new ReentrantLock(true));
         lock.lock();
+        long lockAcquiredTime = System.currentTimeMillis();
+        log.info("charge lock acquired: {}", id);
         try {
-            log.info("charging {}", id);
-            UserPoint userPoint = UserPoint.findById(id, userPointRepository);
+            UserPoint userPoint = userPointRepository.findById(id);
             UserPoint updateUserPoint = userPoint.charge(amount);
 
             PointHistory pointHistory = PointHistory.create(id, amount, TransactionType.CHARGE);
@@ -44,15 +44,19 @@ public class PointService {
 
             return updateUserPoint;
         } finally {
+            long tryEndTime = System.currentTimeMillis();
+            log.info("charge completed: {}, time taken: {} ms", id, tryEndTime - lockAcquiredTime);
             lock.unlock();
         }
     }
 
     public UserPoint use(long id, long amount) {
-        Lock lock = userLocks.computeIfAbsent("" + id, k -> new ReentrantLock(true));
+        Lock lock = userLocks.computeIfAbsent(String.valueOf(id), k -> new ReentrantLock(true));
         lock.lock();
+        long lockAcquiredTime = System.currentTimeMillis();
+        log.info("use lock acquired: {}", id);
         try {
-            UserPoint userPoint = UserPoint.findById(id, userPointRepository);
+            UserPoint userPoint = userPointRepository.findById(id);
             UserPoint updateUserPoint = userPoint.use(amount);
 
             PointHistory pointHistory = PointHistory.create(id, amount, TransactionType.USE);
@@ -62,12 +66,13 @@ public class PointService {
 
             return updateUserPoint;
         } finally {
+            long tryEndTime = System.currentTimeMillis();
+            log.info("charge completed: {}, time taken: {} ms", id, tryEndTime - lockAcquiredTime);
             lock.unlock();
         }
     }
 
     public List<PointHistory> findHistory(long id) {
-        UserPoint.findById(id, userPointRepository);
         return pointHistoryRepository.findAllById(id);
     }
 

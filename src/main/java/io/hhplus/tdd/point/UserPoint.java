@@ -13,15 +13,6 @@ public record UserPoint(
         return new UserPoint(id, 0, System.currentTimeMillis());
     }
 
-    // 포인트 조회 로직 캡슐화
-    public static UserPoint findById(Long id, UserPointRepository userPointRepository) {
-        UserPoint userPoint = userPointRepository.findById(id);
-        if (userPoint == null) {
-            throw new IllegalArgumentException("등록되지 않은 유저입니다.");
-        }
-        return userPoint;
-    }
-
     // 포인트 충전 및 검증 로직
     public UserPoint charge(long amount) {
         if (amount <= 0) {
