@@ -39,21 +39,22 @@ class PointServiceTest {
     @DisplayName("충전하려는 포인트가 0원 이하일 경우 충전에 실패한다.")
     void failToChargeIfAmountIsNotGreaterThanZero() {
         //given
-        long chargeAmount = 0L;
+        long chargeAmount = 0L; // 충전할 금액
         UserPoint userPoint = new UserPoint(USER_ID, chargeAmount, System.currentTimeMillis()); // 초기 유저 포인트 객체
 
+        // 유저의 현재 포인트 조회 시 mock 객체 반환 설정
         given(userPointRepository.findById(USER_ID)).willReturn(userPoint);
 
         //when - then
         assertThatThrownBy(() -> {
-            pointService.charge(USER_ID, chargeAmount);
+            pointService.charge(USER_ID, chargeAmount); // 검증할 메서드 실행
         })
-            .isInstanceOf(IllegalArgumentException.class)
+            .isInstanceOf(IllegalArgumentException.class) // IllegalArgumentException 예외를 발생시키는지 검증
             .hasMessageContaining("0보다 커야 합니다.");
     }
 
     @Test
-    @DisplayName("0원이 넘는 포인트를 충전하면 충전된다.")
+    @DisplayName("최대 잔고에 초과되지 않게, 0원이 넘는 포인트를 충전하면 충전된다.")
     void chargePointWhenAmountIsGreaterThanZero() {
         //given
         long chargeAmount = 1_000L; // 충전할 금액
@@ -77,6 +78,25 @@ class PointServiceTest {
     }
 
     // 최대 잔고를 넘으면 실패
+    @Test
+    @DisplayName("충전 시 최대 잔고를 넘으면 충전에 실패한다.")
+    void failToChargeIfChargePointIsGreaterThanMaxPoint() {
+        //given
+        long chargeAmount = 1_000_001L; // 충전할 금액
+        // 최대 금액 1_000_000L
+
+        UserPoint userPoint = new UserPoint(USER_ID, 0L, System.currentTimeMillis()); // 초기 유저 포인트 객체
+
+        // 유저의 현재 포인트 조회 시 mock 객체 반환 설정
+        given(userPointRepository.findById(USER_ID)).willReturn(userPoint);
+
+        //when - then
+        assertThatThrownBy(() -> {
+            pointService.charge(USER_ID, chargeAmount); // 검증할 메서드 실행
+        })
+                .isInstanceOf(IllegalArgumentException.class) // IllegalArgumentException 예외를 발생시키는지 검증
+                .hasMessageContaining("포인트 최대 잔고는");
+    }
   
     @Test
     @DisplayName("특정 유저의 포인트 정보를 리턴한다.")
@@ -100,13 +120,14 @@ class PointServiceTest {
         long useAmount = 0L;
         UserPoint userPoint = new UserPoint(USER_ID, useAmount, System.currentTimeMillis()); // 초기 유저 포인트 객체
 
+        // 유저의 현재 포인트 조회 시 mock 객체 반환 설정
         given(userPointRepository.findById(USER_ID)).willReturn(userPoint);
 
         //when - then
         assertThatThrownBy(() -> {
-            pointService.use(USER_ID, useAmount);
+            pointService.use(USER_ID, useAmount); // 검증할 메서드 실행
         })
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(IllegalArgumentException.class) // IllegalArgumentException 예외를 발생시키는지 검증
                 .hasMessageContaining("0보다 커야 합니다.");
     }
 
@@ -117,13 +138,14 @@ class PointServiceTest {
         long useAmount = 10_000L;
         UserPoint userPoint = new UserPoint(USER_ID, 1_000L, System.currentTimeMillis()); // 초기 유저 포인트 객체
 
+        // 유저의 현재 포인트 조회 시 mock 객체 반환 설정
         given(userPointRepository.findById(USER_ID)).willReturn(userPoint);
 
         //when - then
         assertThatThrownBy(() -> {
-            pointService.use(USER_ID, useAmount);
+            pointService.use(USER_ID, useAmount); // 검증할 메서드 실행
         })
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(IllegalArgumentException.class) // IllegalArgumentException 예외를 발생시키는지 검증
                 .hasMessageContaining("잔액이 부족합니다.");
     }
 
@@ -161,7 +183,6 @@ class PointServiceTest {
                 new PointHistory(2L, USER_ID, 500L, TransactionType.USE, System.currentTimeMillis())
         );
         // 유저의 포인트 내역 조회 시 mock 객체 반환 설정
-        given(userPointRepository.findById(USER_ID)).willReturn(new UserPoint(USER_ID, 500L, 0L));
         given(pointHistoryRepository.findAllById(USER_ID)).willReturn(expectedList);
 
         //when
